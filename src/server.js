@@ -21,7 +21,7 @@ app.use(
   }),
 );
 
-const { APP_SECRET, PRIVATE_KEY, PASSPHRASE = "", PORT = "3000" } = process.env;
+const { APP_SECRET, PRIVATE_KEY, PASSPHRASE = "", PORT = "8023" } = process.env;
 
 /*
 Example:
