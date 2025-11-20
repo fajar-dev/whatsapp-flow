@@ -11,34 +11,17 @@ interface DropdownOption {
   enabled?: boolean;
 }
 
-interface AppointmentData {
-  department: DropdownOption[];
-  location: DropdownOption[];
-  is_location_enabled: boolean;
-  date: DropdownOption[];
-  is_date_enabled: boolean;
-  time: DropdownOption[];
-  is_time_enabled: boolean;
-}
-
 interface DetailsData {
-  department: string;
-  location: string;
-  date: string;
-  time: string;
+  property_types: DropdownOption[];
 }
 
 interface SummaryData {
-  appointment: string;
-  details: string;
-  department: string;
-  location: string;
-  date: string;
-  time: string;
+  registration_details: string;
   name: string;
-  email: string;
+  address: string;
+  city: string;
+  property_type: string;
   phone: string;
-  more_details: string;
 }
 
 interface SuccessData {
@@ -65,116 +48,31 @@ interface DecryptedBody {
 
 // this object is generated from Flow Builder under "..." > Endpoint > Snippets > Responses
 const SCREEN_RESPONSES = {
-  APPOINTMENT: {
-    screen: "APPOINTMENT",
-    data: {
-      department: [
-        {
-          id: "shopping",
-          title: "Shopping & Groceries",
-        },
-        {
-          id: "clothing",
-          title: "Clothing & Apparel",
-        },
-        {
-          id: "home",
-          title: "Home Goods & Decor",
-        },
-        {
-          id: "electronics",
-          title: "Electronics & Appliances",
-        },
-        {
-          id: "beauty",
-          title: "Beauty & Personal Care",
-        },
-      ],
-      location: [
-        {
-          id: "1",
-          title: "King\u2019s Cross, London",
-        },
-        {
-          id: "2",
-          title: "Oxford Street, London",
-        },
-        {
-          id: "3",
-          title: "Covent Garden, London",
-        },
-        {
-          id: "4",
-          title: "Piccadilly Circus, London",
-        },
-      ],
-      is_location_enabled: true,
-      date: [
-        {
-          id: "2024-01-01",
-          title: "Mon Jan 01 2024",
-        },
-        {
-          id: "2024-01-02",
-          title: "Tue Jan 02 2024",
-        },
-        {
-          id: "2024-01-03",
-          title: "Wed Jan 03 2024",
-        },
-      ],
-      is_date_enabled: true,
-      time: [
-        {
-          id: "10:30",
-          title: "10:30",
-        },
-        {
-          id: "11:00",
-          title: "11:00",
-          enabled: false,
-        },
-        {
-          id: "11:30",
-          title: "11:30",
-        },
-        {
-          id: "12:00",
-          title: "12:00",
-          enabled: false,
-        },
-        {
-          id: "12:30",
-          title: "12:30",
-        },
-      ],
-      is_time_enabled: true,
-    } as AppointmentData,
-  } as ScreenResponse<AppointmentData>,
   DETAILS: {
     screen: "DETAILS",
     data: {
-      department: "beauty",
-      location: "1",
-      date: "2024-01-01",
-      time: "11:30",
+      property_types: [
+        {
+          id: "rumah",
+          title: "Rumah",
+        },
+        {
+          id: "kantor",
+          title: "Kantor",
+        },
+      ],
     } as DetailsData,
   } as ScreenResponse<DetailsData>,
   SUMMARY: {
     screen: "SUMMARY",
     data: {
-      appointment:
-        "Beauty & Personal Care Department at Kings Cross, London\nMon Jan 01 2024 at 11:30.",
-      details:
-        "Name: John Doe\nEmail: john@example.com\nPhone: 123456789\n\nA free skin care consultation, please",
-      department: "beauty",
-      location: "1",
-      date: "2024-01-01",
-      time: "11:30",
+      registration_details:
+        "Nama: John Doe\nAlamat: Jl. Contoh No. 123\nKota: Jakarta Selatan\nTipe Properti: Rumah\nNomor HP: 08123456789",
       name: "John Doe",
-      email: "john@example.com",
-      phone: "123456789",
-      more_details: "A free skin care consultation, please",
+      address: "Jl. Contoh No. 123",
+      city: "Jakarta Selatan",
+      property_type: "rumah",
+      phone: "08123456789",
     } as SummaryData,
   } as ScreenResponse<SummaryData>,
   TERMS: {
@@ -220,86 +118,51 @@ export const getNextScreen = async (
     };
   }
 
-  // handle initial request when opening the flow and display APPOINTMENT screen
+  // handle initial request when opening the flow and display DETAILS screen
   if (action === "INIT") {
-    return {
-      ...SCREEN_RESPONSES.APPOINTMENT,
-      data: {
-        ...SCREEN_RESPONSES.APPOINTMENT.data,
-        // these fields are disabled initially. Each field is enabled when previous fields are selected
-        is_location_enabled: false,
-        is_date_enabled: false,
-        is_time_enabled: false,
-      },
-    };
+    return SCREEN_RESPONSES.DETAILS;
   }
 
   if (action === "data_exchange") {
     // handle the request based on the current screen
     switch (screen) {
-      // handles when user interacts with APPOINTMENT screen
-      case "APPOINTMENT":
-        // update the appointment fields based on current user selection
-        return {
-          ...SCREEN_RESPONSES.APPOINTMENT,
-          data: {
-            // copy initial screen data then override specific fields
-            ...SCREEN_RESPONSES.APPOINTMENT.data,
-            // each field is enabled only when previous fields are selected
-            is_location_enabled: Boolean(data.department),
-            is_date_enabled: Boolean(data.department) && Boolean(data.location),
-            is_time_enabled:
-              Boolean(data.department) &&
-              Boolean(data.location) &&
-              Boolean(data.date),
-
-            //TODO: filter each field options based on current selection, here we filter randomly instead
-            location: SCREEN_RESPONSES.APPOINTMENT.data.location.slice(0, 3),
-            date: SCREEN_RESPONSES.APPOINTMENT.data.date.slice(0, 3),
-            time: SCREEN_RESPONSES.APPOINTMENT.data.time.slice(0, 3),
-          },
-        };
-
-      // handles when user completes DETAILS screen
+      // handles when user completes DETAILS screen (registration form)
       case "DETAILS": {
-        // the client payload contains selected ids from dropdown lists, we need to map them to names to display to user
-        const departmentOption =
-          SCREEN_RESPONSES.APPOINTMENT.data.department.find(
-            (dept) => dept.id === data.department
+        // map property_type id to display name
+        const propertyTypeOption =
+          SCREEN_RESPONSES.DETAILS.data.property_types.find(
+            (type) => type.id === data.property_type
           );
-        const locationOption = SCREEN_RESPONSES.APPOINTMENT.data.location.find(
-          (loc) => loc.id === data.location
-        );
-        const dateOption = SCREEN_RESPONSES.APPOINTMENT.data.date.find(
-          (date) => date.id === data.date
-        );
 
-        if (!departmentOption || !locationOption || !dateOption) {
-          throw new Error("Invalid appointment data");
+        if (!propertyTypeOption) {
+          throw new Error("Invalid property type");
         }
 
-        const appointment = `${departmentOption.title} at ${locationOption.title}
-${dateOption.title} at ${data.time}`;
-
-        const details = `Name: ${data.name}
-Email: ${data.email}
-Phone: ${data.phone}
-"${data.more_details}"`;
+        const registration_details = `Nama: ${data.name}
+Alamat: ${data.address}
+Kota: ${data.city}
+Tipe Properti: ${propertyTypeOption.title}
+Nomor HP: ${data.phone}`;
 
         return {
           ...SCREEN_RESPONSES.SUMMARY,
           data: {
-            appointment,
-            details,
+            registration_details,
             // return the same fields sent from client back to submit in the next step
-            ...data,
+            name: data.name,
+            address: data.address,
+            city: data.city,
+            property_type: data.property_type,
+            phone: data.phone,
           },
         };
       }
 
       // handles when user completes SUMMARY screen
       case "SUMMARY":
-        // TODO: save appointment to your database
+        // TODO: save registration to your database
+        console.log("Saving registration:", data);
+        
         // send success response to complete and close the flow
         return {
           ...SCREEN_RESPONSES.SUCCESS,
