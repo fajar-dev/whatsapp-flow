@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "bun run --hot src/main.ts",
-    "start": "bun run src/main.ts"
+    "start": "bun run src/main.ts",
+    "build": "bun build --minify --outfile dist/main.js --target bun src/main.ts"
   },
   "dependencies": {
     "hono": "^4.10.6"
