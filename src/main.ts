@@ -9,6 +9,17 @@ import { Hono } from "hono";
 import { decryptRequest, encryptResponse, FlowEndpointException } from "./encryption";
 import { getNextScreen } from "./flow";
 import crypto from "crypto";
+import * as fs from "fs/promises";
+import path from "path";
+
+const LOG_DIR = "./logs";
+
+const generateTimestampId = () =>
+  new Date().toISOString().replace(/[:.]/g, "-");
+
+async function ensureLogDir() {
+  await fs.mkdir(LOG_DIR, { recursive: true });
+}
 
 const app = new Hono();
 
@@ -60,6 +71,8 @@ app.post("/", async (c) => {
         );
     }
 
+    await ensureLogDir(); // ⬅️ pastikan folder log ada
+
     // Get raw body for signature verification
     const rawBody = await c.req.text();
     const signature = c.req.header("x-hub-signature-256");
@@ -87,6 +100,18 @@ app.post("/", async (c) => {
     const { aesKeyBuffer, initialVectorBuffer, decryptedBody } = decryptedRequest;
     console.log("💬 Decrypted Request:", decryptedBody);
 
+    const logBaseFile = generateTimestampId();
+    const requestLogFile = path.join(LOG_DIR, `${logBaseFile}-request.json`);
+    const responseLogFile = path.join(LOG_DIR, `${logBaseFile}-response.json`);
+
+    // simpan REQUEST kalau bukan ping
+    if (decryptedBody.action !== "ping") {
+        await fs.writeFile(
+            requestLogFile,
+            JSON.stringify(decryptedBody, null, 2)
+        );
+    }
+
     // TODO: Uncomment this block and add your flow token validation logic.
     // If the flow token becomes invalid, return HTTP code 427 to disable the flow and show the message in `error_msg` to the user
     // Refer to the docs for details https://developers.facebook.com/docs/whatsapp/flows/reference/error-codes#endpoint_error_codes
@@ -105,6 +130,13 @@ app.post("/", async (c) => {
 
     const screenResponse = await getNextScreen(decryptedBody);
     console.log("👉 Response to Encrypt:", screenResponse);
+
+    if (decryptedBody.action !== "ping") {
+        await fs.writeFile(
+            responseLogFile,
+            JSON.stringify(screenResponse, null, 2)
+        );
+    }
 
     const encryptedResponse = encryptResponse(
         screenResponse,
