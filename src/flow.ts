@@ -5,6 +5,64 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+interface DropdownOption {
+  id: string;
+  title: string;
+  enabled?: boolean;
+}
+
+interface AppointmentData {
+  department: DropdownOption[];
+  location: DropdownOption[];
+  is_location_enabled: boolean;
+  date: DropdownOption[];
+  is_date_enabled: boolean;
+  time: DropdownOption[];
+  is_time_enabled: boolean;
+}
+
+interface DetailsData {
+  department: string;
+  location: string;
+  date: string;
+  time: string;
+}
+
+interface SummaryData {
+  appointment: string;
+  details: string;
+  department: string;
+  location: string;
+  date: string;
+  time: string;
+  name: string;
+  email: string;
+  phone: string;
+  more_details: string;
+}
+
+interface SuccessData {
+  extension_message_response: {
+    params: {
+      flow_token: string;
+      some_param_name?: string;
+    };
+  };
+}
+
+interface ScreenResponse<T = any> {
+  screen: string;
+  data: T;
+}
+
+interface DecryptedBody {
+  screen?: string;
+  data?: any;
+  version?: string;
+  action: string;
+  flow_token?: string;
+}
+
 // this object is generated from Flow Builder under "..." > Endpoint > Snippets > Responses
 const SCREEN_RESPONSES = {
   APPOINTMENT: {
@@ -91,8 +149,8 @@ const SCREEN_RESPONSES = {
         },
       ],
       is_time_enabled: true,
-    },
-  },
+    } as AppointmentData,
+  } as ScreenResponse<AppointmentData>,
   DETAILS: {
     screen: "DETAILS",
     data: {
@@ -100,8 +158,8 @@ const SCREEN_RESPONSES = {
       location: "1",
       date: "2024-01-01",
       time: "11:30",
-    },
-  },
+    } as DetailsData,
+  } as ScreenResponse<DetailsData>,
   SUMMARY: {
     screen: "SUMMARY",
     data: {
@@ -117,12 +175,12 @@ const SCREEN_RESPONSES = {
       email: "john@example.com",
       phone: "123456789",
       more_details: "A free skin care consultation, please",
-    },
-  },
+    } as SummaryData,
+  } as ScreenResponse<SummaryData>,
   TERMS: {
     screen: "TERMS",
     data: {},
-  },
+  } as ScreenResponse<{}>,
   SUCCESS: {
     screen: "SUCCESS",
     data: {
@@ -132,15 +190,19 @@ const SCREEN_RESPONSES = {
           some_param_name: "PASS_CUSTOM_VALUE",
         },
       },
-    },
-  },
+    } as SuccessData,
+  } as ScreenResponse<SuccessData>,
 };
 
-export const getNextScreen = async (decryptedBody: any) => {
+export const getNextScreen = async (
+  decryptedBody: DecryptedBody
+): Promise<ScreenResponse> => {
   const { screen, data, version, action, flow_token } = decryptedBody;
+
   // handle health check request
   if (action === "ping") {
     return {
+      screen: "PING",
       data: {
         status: "active",
       },
@@ -151,6 +213,7 @@ export const getNextScreen = async (decryptedBody: any) => {
   if (data?.error) {
     console.warn("Received client error:", data);
     return {
+      screen: "ERROR",
       data: {
         acknowledged: true,
       },
@@ -198,21 +261,25 @@ export const getNextScreen = async (decryptedBody: any) => {
         };
 
       // handles when user completes DETAILS screen
-      case "DETAILS":
+      case "DETAILS": {
         // the client payload contains selected ids from dropdown lists, we need to map them to names to display to user
-        const departmentName =
+        const departmentOption =
           SCREEN_RESPONSES.APPOINTMENT.data.department.find(
             (dept) => dept.id === data.department
-          ).title;
-        const locationName = SCREEN_RESPONSES.APPOINTMENT.data.location.find(
+          );
+        const locationOption = SCREEN_RESPONSES.APPOINTMENT.data.location.find(
           (loc) => loc.id === data.location
-        ).title;
-        const dateName = SCREEN_RESPONSES.APPOINTMENT.data.date.find(
+        );
+        const dateOption = SCREEN_RESPONSES.APPOINTMENT.data.date.find(
           (date) => date.id === data.date
-        ).title;
+        );
 
-        const appointment = `${departmentName} at ${locationName}
-${dateName} at ${data.time}`;
+        if (!departmentOption || !locationOption || !dateOption) {
+          throw new Error("Invalid appointment data");
+        }
+
+        const appointment = `${departmentOption.title} at ${locationOption.title}
+${dateOption.title} at ${data.time}`;
 
         const details = `Name: ${data.name}
 Email: ${data.email}
@@ -228,6 +295,7 @@ Phone: ${data.phone}
             ...data,
           },
         };
+      }
 
       // handles when user completes SUMMARY screen
       case "SUMMARY":
@@ -238,7 +306,7 @@ Phone: ${data.phone}
           data: {
             extension_message_response: {
               params: {
-                flow_token,
+                flow_token: flow_token || "",
               },
             },
           },
