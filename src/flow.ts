@@ -5,311 +5,137 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-interface DropdownOption {
-    id: string;
-    title: string;
-    enabled?: boolean;
-}
-
-interface AppointmentData {
-    department: DropdownOption[];
-    location: DropdownOption[];
-    is_location_enabled: boolean;
-    date: DropdownOption[];
-    is_date_enabled: boolean;
-    time: DropdownOption[];
-    is_time_enabled: boolean;
-}
-
-interface DetailsData {
-    department: string;
-    location: string;
-    date: string;
-    time: string;
-}
-
-interface SummaryData {
-    appointment: string;
-    details: string;
-    department: string;
-    location: string;
-    date: string;
-    time: string;
-    name: string;
-    email: string;
-    phone: string;
-    more_details: string;
-}
-
-interface SuccessData {
-    extension_message_response: {
-        params: {
-        flow_token: string;
-        some_param_name?: string;
-        };
-    };
-}
-
-interface ScreenResponse<T = any> {
-    screen: string;
-    data: T;
-}
-
-interface DecryptedBody {
-    screen?: string;
-    data?: any;
-    version?: string;
-    action: string;
-    flow_token?: string;
-}
-
-// this object is generated from Flow Builder under "..." > Endpoint > Snippets > Responses
+// Screen responses untuk Flow Pemasangan WiFi
 const SCREEN_RESPONSES = {
-    APPOINTMENT: {
-        screen: "APPOINTMENT",
+    FORM_PASANG_WIFI: {
+        screen: "FORM_PASANG_WIFI",
         data: {
-        department: [
+        // Data untuk RadioButton tipe lokasi
+        tipe_lokasi_options: [
             {
-            id: "shopping",
-            title: "Shopping & Groceries",
+            id: "rumah",
+            title: "Rumah"
             },
             {
-            id: "clothing",
-            title: "Clothing & Apparel",
-            },
-            {
-            id: "home",
-            title: "Home Goods & Decor",
-            },
-            {
-            id: "electronics",
-            title: "Electronics & Appliances",
-            },
-            {
-            id: "beauty",
-            title: "Beauty & Personal Care",
-            },
-        ],
-        location: [
-            {
-            id: "1",
-            title: "King\u2019s Cross, London",
-            },
-            {
-            id: "2",
-            title: "Oxford Street, London",
-            },
-            {
-            id: "3",
-            title: "Covent Garden, London",
-            },
-            {
-            id: "4",
-            title: "Piccadilly Circus, London",
-            },
-        ],
-        is_location_enabled: true,
-        date: [
-            {
-            id: "2024-01-01",
-            title: "Mon Jan 01 2024",
-            },
-            {
-            id: "2024-01-02",
-            title: "Tue Jan 02 2024",
-            },
-            {
-            id: "2024-01-03",
-            title: "Wed Jan 03 2024",
-            },
-        ],
-        is_date_enabled: true,
-        time: [
-            {
-            id: "10:30",
-            title: "10:30",
-            },
-            {
-            id: "11:00",
-            title: "11:00",
-            enabled: false,
-            },
-            {
-            id: "11:30",
-            title: "11:30",
-            },
-            {
-            id: "12:00",
-            title: "12:00",
-            enabled: false,
-            },
-            {
-            id: "12:30",
-            title: "12:30",
-            },
-        ],
-        is_time_enabled: true,
-        } as AppointmentData,
-    } as ScreenResponse<AppointmentData>,
-    DETAILS: {
-        screen: "DETAILS",
+            id: "kantor",
+            title: "Kantor"
+            }
+        ]
+        }
+    },
+    KONFIRMASI: {
+        screen: "KONFIRMASI",
         data: {
-        department: "beauty",
-        location: "1",
-        date: "2024-01-01",
-        time: "11:30",
-        } as DetailsData,
-    } as ScreenResponse<DetailsData>,
-    SUMMARY: {
-        screen: "SUMMARY",
-        data: {
-        appointment:
-            "Beauty & Personal Care Department at Kings Cross, London\nMon Jan 01 2024 at 11:30.",
-        details:
-            "Name: John Doe\nEmail: john@example.com\nPhone: 123456789\n\nA free skin care consultation, please",
-        department: "beauty",
-        location: "1",
-        date: "2024-01-01",
-        time: "11:30",
-        name: "John Doe",
-        email: "john@example.com",
-        phone: "123456789",
-        more_details: "A free skin care consultation, please",
-        } as SummaryData,
-    } as ScreenResponse<SummaryData>,
-    TERMS: {
-        screen: "TERMS",
-        data: {},
-    } as ScreenResponse<{}>,
+        screen_0_nama: "",
+        screen_0_alamat: "",
+        screen_0_kota: "",
+        screen_0_tipe_lokasi: "",
+        screen_0_nomor_hp: ""
+        }
+    },
     SUCCESS: {
         screen: "SUCCESS",
         data: {
         extension_message_response: {
             params: {
-            flow_token: "REPLACE_FLOW_TOKEN",
-            some_param_name: "PASS_CUSTOM_VALUE",
-            },
-        },
-        } as SuccessData,
-    } as ScreenResponse<SuccessData>,
+            flow_token: "REPLACE_FLOW_TOKEN"
+            }
+        }
+        }
+    }
 };
 
-export const getNextScreen = async (
-    decryptedBody: DecryptedBody
-): Promise<ScreenResponse> => {
-    const { screen, data, version, action, flow_token } = decryptedBody;
+type DecryptedBody = {
+    screen?: string;
+    data?: any;
+    version?: string | number;
+    action?: string;
+    flow_token?: string;
+};
 
-    // handle health check request
+export const getNextScreen = async (decryptedBody: DecryptedBody) => {
+    const { screen, data, version, action, flow_token } = decryptedBody;
+    
+    // Handle health check request
     if (action === "ping") {
         return {
-        screen: "PING",
         data: {
-            status: "active",
-        },
+            status: "active"
+        }
         };
     }
 
-    // handle error notification
+    // Handle error notification
     if (data?.error) {
         console.warn("Received client error:", data);
         return {
-        screen: "ERROR",
         data: {
-            acknowledged: true,
-        },
+            acknowledged: true
+        }
         };
     }
 
-    // handle initial request when opening the flow and display APPOINTMENT screen
+    // Handle initial request - tampilkan form pemasangan WiFi
     if (action === "INIT") {
         return {
-        ...SCREEN_RESPONSES.APPOINTMENT,
-        data: {
-            ...SCREEN_RESPONSES.APPOINTMENT.data,
-            // these fields are disabled initially. Each field is enabled when previous fields are selected
-            is_location_enabled: false,
-            is_date_enabled: false,
-            is_time_enabled: false,
-        },
+        ...SCREEN_RESPONSES.FORM_PASANG_WIFI
         };
     }
 
     if (action === "data_exchange") {
-        // handle the request based on the current screen
+        // Handle request berdasarkan screen saat ini
         switch (screen) {
-        // handles when user interacts with APPOINTMENT screen
-        case "APPOINTMENT":
-            // update the appointment fields based on current user selection
+        // Handle navigasi dari FORM_PASANG_WIFI ke KONFIRMASI
+        case "FORM_PASANG_WIFI":
+            console.log("📝 Data form pemasangan WiFi:", data);
+            
+            // Ambil data dari form dan siapkan untuk konfirmasi
             return {
-            ...SCREEN_RESPONSES.APPOINTMENT,
+            ...SCREEN_RESPONSES.KONFIRMASI,
             data: {
-                // copy initial screen data then override specific fields
-                ...SCREEN_RESPONSES.APPOINTMENT.data,
-                // each field is enabled only when previous fields are selected
-                is_location_enabled: Boolean(data.department),
-                is_date_enabled: Boolean(data.department) && Boolean(data.location),
-                is_time_enabled:
-                Boolean(data.department) &&
-                Boolean(data.location) &&
-                Boolean(data.date),
-
-                //TODO: filter each field options based on current selection, here we filter randomly instead
-                location: SCREEN_RESPONSES.APPOINTMENT.data.location.slice(0, 3),
-                date: SCREEN_RESPONSES.APPOINTMENT.data.date.slice(0, 3),
-                time: SCREEN_RESPONSES.APPOINTMENT.data.time.slice(0, 3),
-            },
-            };
-
-        // handles when user completes DETAILS screen
-        case "DETAILS": {
-            // the client payload contains selected ids from dropdown lists, we need to map them to names to display to user
-            const departmentOption =
-            SCREEN_RESPONSES.APPOINTMENT.data.department.find(
-                (dept) => dept.id === data.department
-            );
-            const locationOption = SCREEN_RESPONSES.APPOINTMENT.data.location.find(
-            (loc) => loc.id === data.location
-            );
-            const dateOption = SCREEN_RESPONSES.APPOINTMENT.data.date.find(
-            (date) => date.id === data.date
-            );
-
-            if (!departmentOption || !locationOption || !dateOption) {
-            throw new Error("Invalid appointment data");
+                screen_0_nama: data.screen_0_nama || "",
+                screen_0_alamat: data.screen_0_alamat || "",
+                screen_0_kota: data.screen_0_kota || "",
+                screen_0_tipe_lokasi: data.screen_0_tipe_lokasi || "",
+                screen_0_nomor_hp: data.screen_0_nomor_hp || ""
             }
-
-            const appointment = `${departmentOption.title} at ${locationOption.title}
-    ${dateOption.title} at ${data.time}`;
-
-            const details = `Name: ${data.name}
-    Email: ${data.email}
-    Phone: ${data.phone}
-    "${data.more_details}"`;
-
-            return {
-            ...SCREEN_RESPONSES.SUMMARY,
-            data: {
-                appointment,
-                details,
-                // return the same fields sent from client back to submit in the next step
-                ...data,
-            },
             };
-        }
 
-        // handles when user completes SUMMARY screen
-        case "SUMMARY":
-            // TODO: save appointment to your database
-            // send success response to complete and close the flow
+        // Handle submit dari KONFIRMASI
+        case "KONFIRMASI":
+            console.log("✅ Data pemasangan WiFi final:", data);
+            
+            // TODO: Simpan data pemasangan WiFi ke database
+            // Contoh:
+            // await saveWifiInstallation({
+            //   nama: data.nama,
+            //   alamat: data.alamat,
+            //   kota: data.kota,
+            //   tipe_lokasi: data.tipe_lokasi,
+            //   nomor_hp: data.nomor_hp,
+            //   created_at: new Date()
+            // });
+            
+            // TODO: Kirim notifikasi ke tim instalasi
+            // await sendNotificationToInstallationTeam(data);
+            
+            // TODO: Kirim konfirmasi WhatsApp ke customer
+            // await sendConfirmationMessage(data.nomor_hp, data);
+            
+            // Return success response untuk menutup flow
             return {
             ...SCREEN_RESPONSES.SUCCESS,
             data: {
                 extension_message_response: {
                 params: {
-                    flow_token: flow_token || "",
-                },
-                },
-            },
+                    flow_token,
+                    // Data tambahan yang bisa digunakan untuk response message
+                    customer_name: data.nama,
+                    location: data.kota,
+                    installation_type: data.tipe_lokasi
+                }
+                }
+            }
             };
 
         default:
